@@ -16,6 +16,49 @@ function M.say_hello()
     print("hello from neovim")
 end
 
+local function highlight_plain_tag(bufnr, line, tag, hl, row, col_offset)
+  local matcher = tag .. "%:"
+
+  local s, e = line:find(matcher, 1)
+
+  if s then
+    -- highlight todo
+    api.nvim_buf_set_extmark(bufnr, ns, row, col_offset + s - 1, {
+      end_col = col_offset + e,
+      hl_group = hl,
+    })
+
+    -- no need to match other tags
+    return true
+  end
+  return false
+end
+
+local function highlight_param_tag(bufnr, line, tag, hl, row, col_offset)
+  local matcher = tag .. "%((%w+)%)%:"
+
+  local s, e, param = line:find(matcher, 1)
+
+  if s then
+
+    -- highlight tag
+    api.nvim_buf_set_extmark(bufnr, ns, row, col_offset + s - 1, {
+      end_col = col_offset + e,
+      hl_group = hl,
+    })
+
+    -- highlight param
+    api.nvim_buf_set_extmark(bufnr, ns, row, col_offset + s + #tag, {
+      end_col = col_offset + e - 2,
+      hl_group = "@parameter",
+    })
+
+    -- no need to match other tags
+    return true
+  end
+  return false
+end
+
 local function raw_buffer_highlight(bufnr, winid)
   local first = vim.fn.line("w0", winid) - 1
   local last  = vim.fn.line("w$", winid)
@@ -23,21 +66,18 @@ local function raw_buffer_highlight(bufnr, winid)
   local lines = api.nvim_buf_get_lines(bufnr, first, last, false)
 
   for i, line in ipairs(lines) do
-    local lnum = first + i - 1
+    local row = first + i - 1
 
     for tag, hl in pairs(M.opts.tags) do
 
-      local matcher = tag .. "%:"
-
-      local s, e = line:find(matcher, 1)
-
-      if s then
-          -- highlight todo
-        api.nvim_buf_set_extmark(bufnr, ns, lnum, s - 1, {
-          end_col = e,
-          hl_group = hl,
-        })
+      if highlight_plain_tag(bufnr, line, tag, hl, row, 0) then
+        break
       end
+
+      if highlight_param_tag(bufnr, line, tag, hl, row, 0) then
+        break
+      end
+
     end
   end
 end
@@ -68,19 +108,16 @@ local function ts_highlight(bufnr, winid, lang)
       end
 
       for tag, hl in pairs(M.opts.tags) do
+        local row = start_row + i - 1
 
-        local matcher = tag .. "%:"
-
-        local s, e = line:find(matcher, 1)
-
-        if s then
-          print(start_row + i - 1)
-          -- highlight todo
-          api.nvim_buf_set_extmark(bufnr, ns, start_row + i - 1, col_offset + s - 1, {
-            end_col = col_offset + e,
-            hl_group = hl,
-          })
+        if highlight_plain_tag(bufnr, line, tag, hl, row, col_offset) then
+          break
         end
+
+        if highlight_param_tag(bufnr, line, tag, hl, row, col_offset) then
+          break
+        end
+
       end
     end
   end
