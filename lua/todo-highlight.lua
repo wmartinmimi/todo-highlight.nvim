@@ -87,15 +87,18 @@ local function raw_buffer_highlight(bufnr, winid)
 end
 
 local function ts_highlight(bufnr, winid, lang)
-  local ok, parser = pcall(ts.get_parser, bufnr, lang)
-  if not ok then
+  local okq, query = pcall(ts.query.parse, lang, "(comment) @comment")
+  if not okq then
+    return
+  end
+
+  local okp, parser = pcall(ts.get_parser, bufnr, lang)
+  if not okp then
     return
   end
 
   local tree = parser:parse()[1]
   local root = tree:root()
-
-  local query = ts.query.parse(lang, "(comment) @comment")
 
   for _, node in query:iter_captures(root, bufnr, 0, -1) do
     local text = ts.get_node_text(node, bufnr)
