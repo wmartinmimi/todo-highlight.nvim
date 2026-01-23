@@ -30,13 +30,12 @@ local function highlight_plain_tag(bufnr, line, tag, hl, row, col_offset)
   local s, e = line:find(matcher, 1)
 
   if s then
-    -- highlight todo
+    -- highlight tag
     api.nvim_buf_set_extmark(bufnr, ns, row, col_offset + s - 1, {
       end_col = col_offset + e,
       hl_group = hl,
     })
 
-    -- no need to match other tags
     return true
   end
   return false
@@ -54,13 +53,12 @@ local function highlight_param_tag(bufnr, line, tag, hl, row, col_offset)
       hl_group = hl,
     })
 
-    -- highlight param
+    -- highlight parameter
     api.nvim_buf_set_extmark(bufnr, ns, row, col_offset + s + #tag, {
       end_col = col_offset + e - 2,
       hl_group = "@parameter",
     })
 
-    -- no need to match other tags
     return true
   end
   return false
@@ -72,6 +70,7 @@ local function raw_buffer_highlight(bufnr, winid)
 
   local lines = api.nvim_buf_get_lines(bufnr, first, last, false)
 
+  -- loop through all lines in visible buffer
   for i, line in ipairs(lines) do
     local row = first + i - 1
 
@@ -104,10 +103,12 @@ local function ts_highlight(bufnr, winid, lang)
   for _, node in query:iter_captures(root, bufnr, 0, -1) do
     local text = ts.get_node_text(node, bufnr)
 
+    -- loop through all lines in comment nodes
     for i, line in ipairs(vim.split(text, "\r?\n")) do
       local start_row, start_col = node:start()
       local col_offset = 0
 
+      -- handle same-line comments after code
       if i == 1 then
         col_offset = start_col
       end
@@ -128,7 +129,7 @@ local function ts_highlight(bufnr, winid, lang)
 end
 
 local function highlight_visible_todos(bufnr, winid)
-  -- Clear only our decorations
+  -- clear all highlights and reapply
   api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 
   local ft = api.nvim_buf_get_option(bufnr, "filetype")
