@@ -17,7 +17,7 @@ function M.say_hello()
 end
 
 local function highlight_plain_tag(bufnr, line, tag, hl, row, col_offset)
-  local matcher = tag .. "%:"
+  local matcher = "%f[%w]" .. tag .. "%:"
 
   local s, e = line:find(matcher, 1)
 
@@ -35,7 +35,7 @@ local function highlight_plain_tag(bufnr, line, tag, hl, row, col_offset)
 end
 
 local function highlight_param_tag(bufnr, line, tag, hl, row, col_offset)
-  local matcher = tag .. "%((%w+)%)%:"
+  local matcher = "%f[%w]" .. tag .. "%(([^)]+)%)%:"
 
   local s, e, param = line:find(matcher, 1)
 
