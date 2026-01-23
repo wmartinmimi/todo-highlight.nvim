@@ -1,4 +1,3 @@
-
 local M = {}
 
 local defaults = {
@@ -24,10 +23,6 @@ local api = vim.api
 local ts = vim.treesitter
 local ns = api.nvim_create_namespace("todo-highlight")
 
-function M.say_hello()
-    print("hello from neovim")
-end
-
 local function highlight_plain_tag(bufnr, line, tag, hl, row, col_offset)
   local matcher = "%f[%w]" .. tag .. "%:"
 
@@ -52,7 +47,6 @@ local function highlight_param_tag(bufnr, line, tag, hl, row, col_offset)
   local s, e, param = line:find(matcher, 1)
 
   if s then
-
     -- highlight tag
     api.nvim_buf_set_extmark(bufnr, ns, row, col_offset + s - 1, {
       end_col = col_offset + e,
@@ -81,7 +75,6 @@ local function raw_buffer_highlight(bufnr, winid)
     local row = first + i - 1
 
     for tag, hl in pairs(M.opts.tags) do
-
       if highlight_plain_tag(bufnr, line, tag, hl, row, 0) then
         break
       end
@@ -89,13 +82,11 @@ local function raw_buffer_highlight(bufnr, winid)
       if highlight_param_tag(bufnr, line, tag, hl, row, 0) then
         break
       end
-
     end
   end
 end
 
 local function ts_highlight(bufnr, winid, lang)
-
   local ok, parser = pcall(ts.get_parser, bufnr, lang)
   if not ok then
     return
@@ -107,11 +98,9 @@ local function ts_highlight(bufnr, winid, lang)
   local query = ts.query.parse(lang, "(comment) @comment")
 
   for _, node in query:iter_captures(root, bufnr, 0, -1) do
-    
     local text = ts.get_node_text(node, bufnr)
 
     for i, line in ipairs(vim.split(text, "\r?\n")) do
-      
       local start_row, start_col = node:start()
       local col_offset = 0
 
@@ -129,7 +118,6 @@ local function ts_highlight(bufnr, winid, lang)
         if highlight_param_tag(bufnr, line, tag, hl, row, col_offset) then
           break
         end
-
       end
     end
   end
@@ -151,17 +139,17 @@ local function highlight_visible_todos(bufnr, winid)
 end
 
 function M.setup(opts)
-    M.opts = vim.tbl_deep_extend("force", defaults, opts or {})
+  M.opts = vim.tbl_deep_extend("force", defaults, opts or {})
 
-    api.nvim_create_autocmd(
-      { "BufEnter", "WinScrolled", "TextChanged", "TextChangedI" },
-      {
-        callback = function(args)
-          local winid = api.nvim_get_current_win()
-          highlight_visible_todos(args.buf, winid)
-        end,
-      }
-    )
+  api.nvim_create_autocmd(
+    { "BufEnter", "WinScrolled", "TextChanged", "TextChangedI" },
+    {
+      callback = function(args)
+        local winid = api.nvim_get_current_win()
+        highlight_visible_todos(args.buf, winid)
+      end,
+    }
+  )
 end
 
 return M
