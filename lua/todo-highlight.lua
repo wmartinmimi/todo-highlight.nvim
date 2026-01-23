@@ -16,7 +16,8 @@ local defaults = {
     -- NOTE
     NOTE = "@comment.hint",
     INFO = "@comment.hint",
-  }
+  },
+  treesitter = function(ft) return true end,
 }
 
 local api = vim.api
@@ -130,12 +131,18 @@ local function highlight_visible_todos(bufnr, winid)
   -- Clear only our decorations
   api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 
-  local lang = ts.language.get_lang(
-    api.nvim_buf_get_option(bufnr, "filetype")
-  )
+  local ft = api.nvim_buf_get_option(bufnr, "filetype")
+  local ts_lang = nil
 
-  if lang then
-    ts_highlight(bufnr, winid, lang)
+  -- only set treesitter language when treesitter is enabled
+  if M.opts.treesitter(ft) then
+    ts_lang = ts.language.get_lang(
+      api.nvim_buf_get_option(bufnr, "filetype")
+    )
+  end
+
+  if ts_lang then
+    ts_highlight(bufnr, winid, ts_lang)
   else
     raw_buffer_highlight(bufnr, winid)
   end
