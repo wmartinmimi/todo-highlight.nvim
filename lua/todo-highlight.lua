@@ -2,10 +2,22 @@
 local M = {}
 
 local defaults = {
-    tags = {
-        TODO = "@comment.todo",
-        NOTE = "@comment.warning",
-    }
+  tags = {
+    -- FIX
+    FIX = "@comment.error",
+    BUG = "@comment.error",
+    ISSUE = "@comment.error",
+    -- HACK
+    HACK = "@comment.warning",
+    -- WARN
+    WARN = "@comment.warning",
+    WARNING = "@comment.warning",
+    -- TODO
+    TODO = "@comment.todo",
+    -- NOTE
+    NOTE = "@comment.hint",
+    INFO = "@comment.hint",
+  }
 }
 
 local api = vim.api
