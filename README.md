@@ -21,6 +21,15 @@ Configuration and behaviour may change significantly without warning.
 }
 ```
 
+## Buffer Local Option
+
+To temporarily switch modes for the current buffer:
+
+- `:TodoHighlight` switch to default mode based on configuration
+- `:TodoHighlight disabled` disable tag highlighting
+- `:TodoHighlight contextless` use contextless highlighting
+- `:TodoHighlight treesitter` use Tree-sitter context and highlight only comments
+
 ## Default Configuration
 
 ```lua
