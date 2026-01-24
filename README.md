@@ -47,6 +47,9 @@ Configuration and behaviour may change significantly without warning.
         INFO = "@comment.hint",
     },
 
+    -- Return true to allow highlighting for selected file type
+    enabled = function(ft) return true end,
+
     -- Return true to enable Tree-sitter support
     treesitter = function(ft) return true end,
 }

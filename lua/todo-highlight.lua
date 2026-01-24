@@ -17,6 +17,7 @@ local defaults = {
     NOTE = "@comment.hint",
     INFO = "@comment.hint",
   },
+  enabled = function(ft) return true end,
   treesitter = function(ft) return true end,
 }
 
@@ -133,9 +134,14 @@ local function highlight_visible_todos(bufnr, winid)
   api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 
   local ft = api.nvim_buf_get_option(bufnr, "filetype")
-  local ts_lang = nil
+
+  -- do not highlight if disabled for file type
+  if not M.opts.enabled(ft) then
+    return
+  end
 
   -- only set treesitter language when treesitter is enabled
+  local ts_lang = nil
   if M.opts.treesitter(ft) then
     ts_lang = ts.language.get_lang(
       api.nvim_buf_get_option(bufnr, "filetype")
