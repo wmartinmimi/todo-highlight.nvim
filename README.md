@@ -27,9 +27,10 @@ Configuration and behaviour may change significantly without warning.
 {
     tags = {
 
-        --[[
-        TAG_NAME = "highlight group",
-        ]]
+        -- TAG_NAME = "highlight group",
+
+        -- run `:highlight` to browse available highlight groups
+        -- or `:Telescope highlight` if you have telescope available
 
         -- FIX
         FIX = "@comment.error",
@@ -43,26 +44,36 @@ Configuration and behaviour may change significantly without warning.
         -- TODO
         TODO = "@comment.todo",
         -- NOTE
-        NOTE = "@comment.hint",
-        INFO = "@comment.hint",
+        NOTE = "@comment.note",
+        INFO = "@comment.note",
     },
 
     -- Return true to allow highlighting for selected file type
     enabled = function(ft) return true end,
 
-    -- Return true to enable Tree-sitter support
-    treesitter = function(ft) return true end,
+    -- Return true to highlight without context awareness (no Tree-sitter)
+    contextless = function(ft) return false end,
 }
 ```
 
-## Highlighting on Text Content
+## Fallback behaviour
 
-To enable highlighting any text content,
-disable Tree-sitter for that file type.
+There is no fallback behaviour.
+By default, all files are highlighted with Tree-sitter context.
+If no corresponding Tree-sitter parser is found,
+then no highlighting is performed.
+
+## Highlighting without Context
+
+To highlight any text that looks like the tag,
+regardless of if it is a comment or not,
+set contextless to true for that file type.
+
+Recommended for file types containing pure text content and no code structure.
 
 ```lua
-treesitter = function(ft)
-    return ft ~= "typst" and ft ~= "markdown"
+contextless = function(ft)
+    return ft == "typst" or ft == "markdown"
 end
 ```
 
@@ -76,7 +87,7 @@ This plugin uses the following highlight groups for tags by default:
 - `@comment.error`
 - `@comment.warning`
 - `@comment.todo`
-- `@comment.hint`
+- `@comment.note`
 
 ## License
 

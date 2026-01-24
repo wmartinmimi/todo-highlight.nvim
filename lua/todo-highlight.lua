@@ -14,11 +14,11 @@ local defaults = {
     -- TODO
     TODO = "@comment.todo",
     -- NOTE
-    NOTE = "@comment.hint",
-    INFO = "@comment.hint",
+    NOTE = "@comment.note",
+    INFO = "@comment.note",
   },
   enabled = function(ft) return true end,
-  treesitter = function(ft) return true end,
+  contextless = function(ft) return false end,
 }
 
 local api = vim.api
@@ -65,7 +65,7 @@ local function highlight_param_tag(bufnr, line, tag, hl, row, col_offset)
   return false
 end
 
-local function raw_buffer_highlight(bufnr, winid)
+local function contextless_highlight(bufnr, winid)
   local first = vim.fn.line("w0", winid) - 1
   local last  = vim.fn.line("w$", winid)
 
@@ -129,7 +129,7 @@ local function ts_highlight(bufnr, winid, lang)
   end
 end
 
-local function highlight_visible_todos(bufnr, winid)
+local function highlight_tags(bufnr, winid)
   -- clear all highlights and reapply
   api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 
@@ -140,18 +140,17 @@ local function highlight_visible_todos(bufnr, winid)
     return
   end
 
-  -- only set treesitter language when treesitter is enabled
-  local ts_lang = nil
-  if M.opts.treesitter(ft) then
-    ts_lang = ts.language.get_lang(
+  if M.opts.contextless(ft) then
+    contextless_highlight(bufnr, winid)
+  else
+    local ts_lang = ts.language.get_lang(
       api.nvim_buf_get_option(bufnr, "filetype")
     )
-  end
 
-  if ts_lang then
-    ts_highlight(bufnr, winid, ts_lang)
-  else
-    raw_buffer_highlight(bufnr, winid)
+    -- only highlight if Tree-sitter is found
+    if ts_lang then
+      ts_highlight(bufnr, winid, ts_lang)
+    end
   end
 end
 
@@ -163,7 +162,7 @@ function M.setup(opts)
     {
       callback = function(args)
         local winid = api.nvim_get_current_win()
-        highlight_visible_todos(args.buf, winid)
+        highlight_tags(args.buf, winid)
       end,
     }
   )
