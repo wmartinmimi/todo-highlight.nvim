@@ -29,6 +29,7 @@ local STATE = {
 
 local api = vim.api
 local ts = vim.treesitter
+local cache_query = {}
 local ns = api.nvim_create_namespace("todo-highlight")
 
 local function highlight_plain_tag(bufnr, line, tag, hl, row, col_offset)
@@ -96,10 +97,14 @@ local function contextless_highlight(bufnr)
 end
 
 local function ts_highlight(bufnr, lang)
-  local okq, query = pcall(ts.query.parse, lang, "(comment) @comment")
-  if not okq then
-    return
+  if not cache_query[bufnr] then
+    local okq, query = pcall(ts.query.parse, lang, "(comment) @comment")
+    if not okq then
+      return
+    end
+    cache_query[bufnr] = query
   end
+  local query = cache_query[bufnr]
 
   local okp, parser = pcall(ts.get_parser, bufnr, lang)
   if not okp then
@@ -196,8 +201,9 @@ function M.setup(opts)
 
   api.nvim_create_user_command("TodoHighlight", function(buffer_opts)
     if buffer_opts.args == "" or STATE[buffer_opts.args] then
-      vim.b[0].todo_highlight = buffer_opts.args
-      highlight_tags(0)
+      local bufnr = api.nvim_get_current_buf()
+      vim.b[bufnr].todo_highlight = buffer_opts.args
+      highlight_tags(bufnr)
     else
       error("Option not recognised!")
     end
