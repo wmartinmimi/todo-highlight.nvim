@@ -61,6 +61,9 @@ To temporarily switch modes for the current buffer:
     -- Return true to allow highlighting for selected file type
     enabled = function(ft) return true end,
 
+    -- Return the Tree-sitter query for the selected file type
+    ts_query = function(ft) return [[(comment) @comment]] end,
+
     -- Return true to highlight without context awareness (no Tree-sitter)
     contextless = function(ft) return false end,
 }
@@ -73,6 +76,24 @@ By default, all files are highlighted with Tree-sitter context.
 If no corresponding Tree-sitter parser is found,
 then no highlighting is performed.
 
+## Highlighting with Custom Context
+
+To highlight any text content as well as comments,
+configure the `ts_query` for that language.
+Recommended for file types containing pure text content and no code structure.
+
+```lua
+ts_query = function(ft)
+    if ft == "typst" then
+        return [[
+            ((comment) @comment)
+            ((text) @text)
+        ]]
+    end
+    return [[(comment) @comment]]
+end
+```
+
 ## Highlighting without Context
 
 To highlight any text that looks like the tag,
@@ -83,7 +104,7 @@ Recommended for file types containing pure text content and no code structure.
 
 ```lua
 contextless = function(ft)
-    return ft == "typst" or ft == "markdown"
+    return ft == "markdown"
 end
 ```
 

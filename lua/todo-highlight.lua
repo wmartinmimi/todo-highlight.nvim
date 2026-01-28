@@ -18,6 +18,7 @@ local defaults = {
     INFO = "@comment.note",
   },
   enabled = function(ft) return true end,
+  ts_query = function(ft) return [[(comment) @comment]] end,
   contextless = function(ft) return false end,
 }
 
@@ -96,9 +97,9 @@ local function contextless_highlight(bufnr)
   end
 end
 
-local function ts_highlight(bufnr, lang)
+local function ts_highlight(bufnr, ft, lang)
   if not cache_query[bufnr] then
-    local okq, query = pcall(ts.query.parse, lang, "(comment) @comment")
+    local okq, query = pcall(ts.query.parse, lang, M.opts.ts_query(ft))
     if not okq then
       return
     end
@@ -185,13 +186,11 @@ local function highlight_tags(bufnr)
   end
 
   if mode == "treesitter" then
-     local ts_lang = ts.language.get_lang(
-      api.nvim_buf_get_option(bufnr, "filetype")
-    )
+     local ts_lang = ts.language.get_lang(ft)
 
     -- only highlight if Tree-sitter is found
     if ts_lang then
-      ts_highlight(bufnr, ts_lang)
+      ts_highlight(bufnr, ft,  ts_lang)
     end
   end
 end
