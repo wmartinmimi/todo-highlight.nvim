@@ -109,7 +109,12 @@ local function ts_highlight(bufnr, lang)
   local tree = parser:parse()[1]
   local root = tree:root()
 
-  for _, node in query:iter_captures(root, bufnr, 0, -1) do
+  local winid = api.nvim_get_current_win()
+
+  local first = vim.fn.line("w0", winid) - 1
+  local last  = vim.fn.line("w$", winid)
+
+  for _, node in query:iter_captures(root, bufnr, first, last) do
     local text = ts.get_node_text(node, bufnr)
 
     -- loop through all lines in comment nodes
