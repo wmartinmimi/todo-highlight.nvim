@@ -2,8 +2,9 @@
 
 Highlights TODO comments for easy lookup.
 
-NOTE: This plugin is beta.
-Configuration and behaviour may change significantly without warning.
+> [!Note]
+> This plugin is beta.
+> Configuration and behaviour may change significantly without warning.
 
 ## Features
 
@@ -97,6 +98,15 @@ This plugin uses the following highlight groups for tags by default:
 - `@comment.warning`
 - `@comment.todo`
 - `@comment.note`
+
+## TODO Features
+
+- custom scope highlighting
+- tree-sitter update hook
+
+## Inspiration
+
+- [folke/todo-commits.nvim](https://github.com/folke/todo-comments.nvim)
 
 ## License
 
