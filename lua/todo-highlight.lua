@@ -97,20 +97,17 @@ local function contextless_highlight(bufnr)
   end
 end
 
-local function ts_highlight(bufnr, ft, lang)
+local function ts_highlight(bufnr, ft, parser)
   if not cache_query[bufnr] then
-    local okq, query = pcall(ts.query.parse, lang, M.opts.ts_query(ft))
-    if not okq then
-      return
+    local query_str = M.opts.ts_query(ft)
+    if query_str then
+      cache_query[bufnr] = ts.query.parse(parser:lang(), query_str)
+    else
+      cache_query[bufnr] = vim.treesitter.query.get(ft, "highlights")
     end
-    cache_query[bufnr] = query
   end
-  local query = cache_query[bufnr]
 
-  local okp, parser = pcall(ts.get_parser, bufnr, lang)
-  if not okp then
-    return
-  end
+  local query = cache_query[bufnr]
 
   local tree = parser:parse()[1]
   local root = tree:root()
@@ -120,28 +117,30 @@ local function ts_highlight(bufnr, ft, lang)
   local first = vim.fn.line("w0", winid) - 1
   local last  = vim.fn.line("w$", winid)
 
-  for _, node in query:iter_captures(root, bufnr, first, last) do
-    local text = ts.get_node_text(node, bufnr)
+  for id, node in query:iter_captures(root, bufnr, first, last) do
+    if query.captures[id] == "comment" then
+      local text = ts.get_node_text(node, bufnr)
 
-    -- loop through all lines in comment nodes
-    for i, line in ipairs(vim.split(text, "\r?\n")) do
-      local start_row, start_col = node:start()
-      local col_offset = 0
+      -- loop through all lines in comment nodes
+      for i, line in ipairs(vim.split(text, "\r?\n")) do
+        local start_row, start_col = node:start()
+        local col_offset = 0
 
-      -- handle same-line comments after code
-      if i == 1 then
-        col_offset = start_col
-      end
-
-      for tag, hl in pairs(M.opts.tags) do
-        local row = start_row + i - 1
-
-        if highlight_plain_tag(bufnr, line, tag, hl, row, col_offset) then
-          break
+        -- handle same-line comments after code
+        if i == 1 then
+          col_offset = start_col
         end
 
-        if highlight_param_tag(bufnr, line, tag, hl, row, col_offset) then
-          break
+        for tag, hl in pairs(M.opts.tags) do
+          local row = start_row + i - 1
+
+          if highlight_plain_tag(bufnr, line, tag, hl, row, col_offset) then
+            break
+          end
+
+          if highlight_param_tag(bufnr, line, tag, hl, row, col_offset) then
+            break
+          end
         end
       end
     end
@@ -149,8 +148,6 @@ local function ts_highlight(bufnr, ft, lang)
 end
 
 local function get_current_mode(bufnr, ft, mode)
-  mode = mode or vim.b[bufnr].todo_highlight
-
   if STATE[mode] then
     vim.b[bufnr].todo_highlight = mode
     return mode
@@ -170,9 +167,13 @@ local function get_current_mode(bufnr, ft, mode)
   return mode
 end
 
-function M.highlight_tags(bufnr, mode)
+function M.highlight(mode, bufnr)
+  -- set default value
+  if not bufnr or bufnr == 0 then
+    bufnr = api.nvim_get_current_buf()
+  end
+
   -- clear all highlights and reapply
-  bufnr = bufnr or api.nvim_get_current_buf()
   api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 
   local ft = api.nvim_buf_get_option(bufnr, "filetype")
@@ -188,22 +189,21 @@ function M.highlight_tags(bufnr, mode)
   end
 
   if mode == "treesitter" then
-     local ts_lang = ts.language.get_lang(ft)
-
-    -- only highlight if Tree-sitter is found
-    if ts_lang then
-      ts_highlight(bufnr, ft,  ts_lang)
+    -- only highlight if parser exists
+    local ok, parser = pcall(ts.get_parser, bufnr)
+    if ok then
+      ts_highlight(bufnr, ft, parser)
     end
   end
 end
 
 function M.setup(opts)
   M.opts = vim.tbl_deep_extend("force", defaults, opts or {})
-  M.highlight_tags(nil, '')
+  M.highlight()
 
   api.nvim_create_user_command("TodoHighlight", function(buffer_opts)
     if buffer_opts.args == "" or STATE[buffer_opts.args] then
-      M.highlight_tags(nil, buffer_opts.args)
+      M.highlight(buffer_opts.args)
     else
       error("Option not recognised!")
     end
@@ -216,10 +216,10 @@ function M.setup(opts)
   })
 
   api.nvim_create_autocmd(
-    { "BufEnter", "WinScrolled", "TextChanged", "TextChangedI" },
+    { "FileType", "WinScrolled", "TextChanged", "TextChangedI" },
     {
       callback = function(args)
-        M.highlight_tags(args.buf)
+        M.highlight(nil, args.buf)
       end,
     }
   )

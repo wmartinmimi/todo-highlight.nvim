@@ -61,8 +61,9 @@ To temporarily switch modes for the current buffer:
     -- Return true to allow highlighting for selected file type
     enabled = function(ft) return true end,
 
-    -- Return the Tree-sitter query for the selected file type
-    ts_query = function(ft) return [[(comment) @comment]] end,
+    -- Return the Tree-sitter query string for the selected file type
+    -- defaults to neovim highlight query if nil
+    ts_query = function(ft) return nil end,
 
     -- Return true to highlight without context awareness (no Tree-sitter)
     contextless = function(ft) return false end,
@@ -79,18 +80,17 @@ then no highlighting is performed.
 ## Highlighting with Custom Context
 
 To highlight any text content as well as comments,
-configure the `ts_query` for that language.
+set the `@comment` capture group using `ts_query` for that language.
 Recommended for file types containing pure text content and no code structure.
 
 ```lua
 ts_query = function(ft)
     if ft == "typst" then
-        return [[
-            ((comment) @comment)
-            ((text) @text)
-        ]]
+        -- capture name must be @comment
+        return "[(comment) (text)] @comment"
     end
-    return [[(comment) @comment]]
+    -- nil will cause plugin to use default query
+    return nil
 end
 ```
 
@@ -119,6 +119,21 @@ This plugin uses the following highlight groups for tags by default:
 - `@comment.warning`
 - `@comment.todo`
 - `@comment.note`
+
+## Highlight API
+
+To highlight current buffer with default mode:
+```lua
+require 'todo-highlight'.highlight()
+```
+
+API:
+```lua
+-- mode is an optional string {"disabled", "treesitter", "contextless", "default"}
+-- bufnr is an optional number for buffer index to be highlighted
+function M.highlight(mode, bufnr)
+end
+```
 
 ## TODO Features
 
