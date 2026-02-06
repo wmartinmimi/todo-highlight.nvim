@@ -148,10 +148,11 @@ local function ts_highlight(bufnr, ft, lang)
   end
 end
 
-local function get_current_mode(bufnr, ft)
-  local mode = vim.b[bufnr].todo_highlight
+local function get_current_mode(bufnr, ft, mode)
+  mode = mode or vim.b[bufnr].todo_highlight
 
   if STATE[mode] then
+    vim.b[bufnr].todo_highlight = mode
     return mode
   end
 
@@ -169,12 +170,13 @@ local function get_current_mode(bufnr, ft)
   return mode
 end
 
-local function highlight_tags(bufnr)
+function M.highlight_tags(bufnr, mode)
   -- clear all highlights and reapply
+  bufnr = bufnr or api.nvim_get_current_buf()
   api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
 
   local ft = api.nvim_buf_get_option(bufnr, "filetype")
-  local mode = get_current_mode(bufnr, ft)
+  mode = get_current_mode(bufnr, ft, mode)
 
   -- do not highlight if disabled for file type
   if mode == "disabled" then
@@ -197,12 +199,11 @@ end
 
 function M.setup(opts)
   M.opts = vim.tbl_deep_extend("force", defaults, opts or {})
+  M.highlight_tags(nil, '')
 
   api.nvim_create_user_command("TodoHighlight", function(buffer_opts)
     if buffer_opts.args == "" or STATE[buffer_opts.args] then
-      local bufnr = api.nvim_get_current_buf()
-      vim.b[bufnr].todo_highlight = buffer_opts.args
-      highlight_tags(bufnr)
+      M.highlight_tags(nil, buffer_opts.args)
     else
       error("Option not recognised!")
     end
@@ -218,7 +219,7 @@ function M.setup(opts)
     { "BufEnter", "WinScrolled", "TextChanged", "TextChangedI" },
     {
       callback = function(args)
-        highlight_tags(args.buf)
+        M.highlight_tags(args.buf)
       end,
     }
   )
