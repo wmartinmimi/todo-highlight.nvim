@@ -100,11 +100,17 @@ end
 local function ts_highlight(bufnr, ft, parser)
   if not cache_query[bufnr] then
     local query_str = M.opts.ts_query(ft)
+    local ok = false
+    local query = nil
     if query_str then
-      cache_query[bufnr] = ts.query.parse(parser:lang(), query_str)
+      ok, query = pcall(ts.query.parse, parser:lang(), query_str)
     else
-      cache_query[bufnr] = vim.treesitter.query.get(ft, "highlights")
+      ok, query = pcall(ts.query.get, ft, "highlights")
     end
+    if not ok or not query then
+      return
+    end
+    cache_query[bufnr] = query
   end
 
   local query = cache_query[bufnr]
