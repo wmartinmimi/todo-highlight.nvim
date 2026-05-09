@@ -196,8 +196,8 @@ function M.highlight(mode, bufnr)
 
   if mode == "treesitter" then
     -- only highlight if parser exists
-    local ok, parser = pcall(ts.get_parser, bufnr)
-    if ok then
+    local parser = ts.get_parser(bufnr)
+    if parser then
       ts_highlight(bufnr, ft, parser)
     end
   end
